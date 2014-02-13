@@ -74,7 +74,7 @@ module VtwebJson
         json.order_id self.order_id
         json.billing_different_with_shipping self.billing_different_with_shipping
         json.required_shipping_address self.required_shipping_address
-        json.repeat_line self.item.length
+        json.repeat_line self.items.length
         item_id = []
         item_name1 = []
         item_name2 = []
