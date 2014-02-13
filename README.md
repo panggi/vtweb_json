@@ -66,7 +66,7 @@ In your controller, create a method to use the gem. I took the code from https:/
       client.address1      						= params[:address1]
       client.address2      						= params[:address2]
       client.city          						= params[:city]
-      client.country_code  						= "IDN"
+      client.country_code  						= params[:country_code]
       client.postal_code   						= params[:postal_code]
       client.phone         						= params[:phone]    
       client.shipping_first_name    			= params[:shipping_first_name]
@@ -74,7 +74,7 @@ In your controller, create a method to use the gem. I took the code from https:/
       client.shipping_address1      			= params[:shipping_address1]
       client.shipping_address2      			= params[:shipping_address2]
       client.shipping_city          			= params[:shipping_city]
-      client.shipping_country_code  			= "IDN"
+      client.shipping_country_code  			= params[:shipping_country_code]
       client.shipping_postal_code   			= params[:shipping_postal_code]
       client.shipping_phone         			= params[:shipping_phone]  
       client.email 							    = params[:email] 
