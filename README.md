@@ -65,7 +65,7 @@ In your controller, create a method to use the gem. I took the code from https:/
       client.last_name     						= params[:last_name]
       client.address1      						= params[:address1]
       client.address2      						= params[:address2]
-      client.city          						= params[:scity]
+      client.city          						= params[:city]
       client.country_code  						= "IDN"
       client.postal_code   						= params[:postal_code]
       client.phone         						= params[:phone]    
