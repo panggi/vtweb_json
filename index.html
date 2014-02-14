@@ -1,0 +1,200 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>VT-Web JSON by panggi</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>VT-Web JSON</h1>
+        <p>Ruby Wrapper for Veritrans VT-Web using JSON request</p>
+
+        <p class="view"><a href="https://github.com/panggi/vtweb_json">View the Project on GitHub <small>panggi/vtweb_json</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/panggi/vtweb_json/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/panggi/vtweb_json/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/panggi/vtweb_json">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a name="veritrans-vt-web-ruby-wrapper-using-json-request" class="anchor" href="#veritrans-vt-web-ruby-wrapper-using-json-request"><span class="octicon octicon-link"></span></a>Veritrans VT-Web Ruby wrapper using JSON request</h1>
+
+<p>Ruby Wrapper for Veritrans VT-Web. Visit <a href="https://www.veritrans.co.id">https://www.veritrans.co.id</a> for more information about the product and see documentation at <a href="http://docs.veritrans.co.id/vtweb/index.html">http://docs.veritrans.co.id/vtweb/index.html</a> for more technical details.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>Add this line to your application's Gemfile:</p>
+
+<pre><code>gem 'vtweb_json'
+</code></pre>
+
+<p>And then execute:</p>
+
+<pre><code>$ bundle
+</code></pre>
+
+<p>Or install it yourself as:</p>
+
+<pre><code>$ gem install vtweb_json
+</code></pre>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>In your Rails app, create 'vtweb.yml' at config directory (config/vtweb.yml) with this code:</p>
+
+<pre><code>development:
+  merchant_id: "T100000000000001XXXXXX"
+  merchant_hash_key: "yourmerchanthashkey"
+  unfinish_payment_return_url: "http://localhost:3000/cancel_pay"
+  finish_payment_return_url: "http://localhost:3000/finish"
+  error_payment_return_url: "http://localhost:3000/error"
+  vtweb_server: "http://127.0.0.1:4000"
+
+production:
+  merchant_id: "A100000000000001XXXXXX"
+  merchant_hash_key: "yourmerchanthashkey"
+  unfinish_payment_return_url: "http://yourweb.com/canceled"
+  finish_payment_return_url: "http://yourweb.com/thank_you"
+  error_payment_return_url: "http://yourweb.com/shop_again"
+</code></pre>
+
+<p>Create a file in 'config/initializers' to set config to vtweb.yml, for example 'store_config.rb':</p>
+
+<pre><code>raw_config = File.read("#{Rails.root}/config/vtweb.yml")
+CONFIG = YAML.load(raw_config)[Rails.env].symbolize_keys
+</code></pre>
+
+<p>In your controller, create a method to use the gem. I took the code from <a href="https://github.com/veritrans/veritrans-rails-sample-cart">https://github.com/veritrans/veritrans-rails-sample-cart</a> for the example with some modification:</p>
+
+<pre><code>def confirm
+  client = ::VtwebJson::Client.new
+  client.order_id     = SecureRandom.hex(5)
+
+  # Example 
+  @carts = Cart.all
+  @total = Cart.select(:sub_total).sum(:sub_total)
+
+  params["item"] = []    
+
+  @carts.each do |item|
+    params["item"] &lt;&lt; { "item_id" =&gt; item.product_id, "price" =&gt; item.product.price.to_s, "quantity" =&gt; item.quantity.to_s, 
+                              "item_name1" =&gt; item.product.name, "item_name2" =&gt; item.product.name }
+  end
+
+  client.items                              = params["item"]
+  client.billing_different_with_shipping    = 1
+  client.required_shipping_address          = 1
+  client.first_name                         = params[:first_name]
+  client.last_name                          = params[:last_name]
+  client.address1                           = params[:address1]
+  client.address2                           = params[:address2]
+  client.city                               = params[:city]
+  client.country_code                       = params[:country_code]
+  client.postal_code                        = params[:postal_code]
+  client.phone                              = params[:phone]    
+  client.shipping_first_name                = params[:shipping_first_name]
+  client.shipping_last_name                 = params[:shipping_last_name]
+  client.shipping_address1                  = params[:shipping_address1]
+  client.shipping_address2                  = params[:shipping_address2]
+  client.shipping_city                      = params[:shipping_city]
+  client.shipping_country_code              = params[:shipping_country_code]
+  client.shipping_postal_code               = params[:shipping_postal_code]
+  client.shipping_phone                     = params[:shipping_phone]  
+  client.email                              = params[:email] 
+
+  # Payment Options
+  client.promo_bins                         = ['411111', '510510']    
+  client.enable_3d_secure                   = 1
+  client.installment_banks                  = ['bni', 'cimb', 'mandiri']
+  client.installment_terms                  = { bni: [3,12,2], cimb: [3,6,12] }
+  client.point_banks                        = ['cimb', 'bni']
+  client.bank                               = 'bni'
+  client.payment_methods                    = ['credit_card', 'mandiri_clickpay']
+
+  client.tokens
+  @client = client
+  @tokens = JSON.parse client.tokens.body
+  render :layout =&gt; 'application'
+end
+</code></pre>
+
+<p>After you get token_browser and token_merchant, you have to send a http post request merchant_id, order_id and token_browser to redirection url of vtweb. This code was also taken from <a href="https://github.com/veritrans/veritrans-rails-sample-cart">https://github.com/veritrans/veritrans-rails-sample-cart</a> :</p>
+
+<pre><code>&lt;h1 align="center"&gt;Confirm Purchase Items&lt;/h1&gt;
+&lt;%= form_tag(@client.redirection_url, :name =&gt; "form_auto_post") do -%&gt;
+    &lt;input type="hidden" name="merchant_id" value="&lt;%= @client._merchant_id %&gt;"&gt; 
+    &lt;input type="hidden" name="order_id" value="&lt;%= @client.order_id %&gt;"&gt;
+    &lt;input type="hidden" name="token_browser" value="&lt;%= @tokens["token_browser"] %&gt;"&gt;
+    &lt;table border="1" align="center" width="80%" cellpadding="10" bgcolor="#FFFFCC"&gt;
+  &lt;tr&gt;
+    &lt;th&gt;Name&lt;/th&gt;
+    &lt;th&gt;Price&lt;/th&gt;
+    &lt;th&gt;Quantity&lt;/th&gt;
+    &lt;th&gt;Sub Total&lt;/th&gt;    
+  &lt;/tr&gt;
+
+  &lt;% for cart in @carts %&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;%= cart.product.name %&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;%= cart.product.price %&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;%= cart.quantity %&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;%= cart.sub_total %&gt;&lt;/td&gt;
+    &lt;/tr&gt;    
+  &lt;% end %&gt;  
+  &lt;tr&gt;
+    &lt;td colspan="2"&gt;&lt;/td&gt;
+    &lt;td style="text-align=right"&gt;&lt;strong&gt;Total&lt;/strong&gt;&lt;/td&gt;
+    &lt;td style="text-align=right"&gt;&lt;strong&gt;&lt;%= @total %&gt; &lt;/strong&gt;&lt;/td&gt;
+  &lt;/tr&gt;
+    &lt;/table&gt;
+    &lt;br&gt;&lt;br&gt;
+    &lt;div align="center"&gt;
+    &lt;input type="submit" value="Go to payment page"&gt;
+    &lt;/div&gt;
+&lt;% end %&gt;
+</code></pre>
+
+<h2>
+<a name="contributing" class="anchor" href="#contributing"><span class="octicon octicon-link"></span></a>Contributing</h2>
+
+<ol>
+<li>Fork it <a href="http://github.com/panggi/vtweb_json/fork">http://github.com/panggi/vtweb_json/fork</a> </li>
+<li>Create your feature branch (<code>git checkout -b my-new-feature</code>)</li>
+<li>Commit your changes (<code>git commit -am 'Add some feature'</code>)</li>
+<li>Push to the branch (<code>git push origin my-new-feature</code>)</li>
+<li>Create new Pull Request</li>
+</ol>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/panggi">panggi</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
+            var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+            document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+          </script>
+          <script type="text/javascript">
+            try {
+              var pageTracker = _gat._getTracker("UA-42012087-4");
+            pageTracker._trackPageview();
+            } catch(err) {}
+          </script>
+
+  </body>
+</html>
